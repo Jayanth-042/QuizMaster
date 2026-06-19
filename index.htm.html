@@ -1,0 +1,1213 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>QuizMaster — Online Quiz App</title>
+<style>
+/* ── Reset & Base ── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --navy:      #0F1B2D;
+  --navy-mid:  #162236;
+  --navy-light:#1E3050;
+  --teal:      #00D4AA;
+  --teal-dim:  #00B38E;
+  --teal-glow: rgba(0,212,170,0.18);
+  --gold:      #FFB830;
+  --danger:    #FF5C6A;
+  --success:   #4ADE80;
+  --white:     #FFFFFF;
+  --text-1:    #F0F4FF;
+  --text-2:    #8899B4;
+  --text-3:    #566A87;
+  --card:      #162236;
+  --card-hover:#1E3050;
+  --border:    rgba(255,255,255,0.08);
+  --radius-sm: 10px;
+  --radius-md: 16px;
+  --radius-lg: 24px;
+  --font: 'Segoe UI', system-ui, -apple-system, sans-serif;
+  --mono: 'Consolas', 'SF Mono', monospace;
+}
+
+html { font-size: 16px; -webkit-font-smoothing: antialiased; }
+body {
+  background: var(--navy);
+  color: var(--text-1);
+  font-family: var(--font);
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  padding: 0;
+  overflow-x: hidden;
+}
+
+/* ── Background grid ── */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background-image:
+    linear-gradient(rgba(0,212,170,0.04) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0,212,170,0.04) 1px, transparent 1px);
+  background-size: 40px 40px;
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* ── Glow orbs ── */
+body::after {
+  content: '';
+  position: fixed;
+  width: 600px; height: 600px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(0,212,170,0.08) 0%, transparent 70%);
+  top: -200px; left: -200px;
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* ── Layout ── */
+#app {
+  width: 100%;
+  max-width: 720px;
+  padding: 24px 20px 60px;
+  position: relative;
+  z-index: 1;
+}
+
+/* ── Header ── */
+.app-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px 0 28px;
+}
+.logo {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 18px;
+  font-weight: 700;
+  letter-spacing: -0.3px;
+  color: var(--white);
+}
+.logo-icon {
+  width: 36px; height: 36px;
+  background: var(--teal);
+  border-radius: 10px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 18px;
+}
+.logo span { color: var(--teal); }
+.header-badge {
+  font-size: 11px;
+  font-family: var(--mono);
+  color: var(--teal);
+  border: 1px solid rgba(0,212,170,0.3);
+  padding: 4px 10px;
+  border-radius: 20px;
+  letter-spacing: 0.08em;
+}
+
+/* ══════════════════════════════════════
+   SCREEN: HOME
+══════════════════════════════════════ */
+#screen-home { animation: fadeUp 0.5s ease both; }
+
+.hero {
+  text-align: center;
+  padding: 20px 0 36px;
+}
+.hero-eyebrow {
+  font-size: 11px;
+  font-family: var(--mono);
+  letter-spacing: 0.15em;
+  color: var(--teal);
+  text-transform: uppercase;
+  margin-bottom: 16px;
+}
+.hero h1 {
+  font-size: clamp(28px, 5vw, 44px);
+  font-weight: 800;
+  line-height: 1.15;
+  letter-spacing: -1px;
+  color: var(--white);
+  margin-bottom: 14px;
+}
+.hero h1 em {
+  font-style: normal;
+  color: var(--teal);
+}
+.hero p {
+  font-size: 15px;
+  color: var(--text-2);
+  max-width: 420px;
+  margin: 0 auto 32px;
+  line-height: 1.7;
+}
+
+/* Quiz picker cards */
+.quiz-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 14px;
+  margin-bottom: 32px;
+}
+.quiz-card {
+  background: var(--card);
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 20px 18px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  position: relative;
+  overflow: hidden;
+}
+.quiz-card::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: var(--teal-glow);
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+.quiz-card:hover { border-color: var(--teal); transform: translateY(-3px); }
+.quiz-card:hover::before { opacity: 1; }
+.quiz-card.selected {
+  border-color: var(--teal);
+  background: var(--card-hover);
+}
+.quiz-card.selected::after {
+  content: '✓';
+  position: absolute;
+  top: 10px; right: 12px;
+  color: var(--teal);
+  font-size: 14px;
+  font-weight: 700;
+}
+.quiz-card-icon { font-size: 28px; margin-bottom: 10px; }
+.quiz-card-name {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-1);
+  margin-bottom: 4px;
+}
+.quiz-card-meta {
+  font-size: 11px;
+  color: var(--text-3);
+  font-family: var(--mono);
+}
+
+/* Difficulty picker */
+.section-label {
+  font-size: 11px;
+  font-family: var(--mono);
+  letter-spacing: 0.1em;
+  color: var(--text-3);
+  text-transform: uppercase;
+  margin-bottom: 12px;
+}
+.diff-row {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 28px;
+  flex-wrap: wrap;
+}
+.diff-chip {
+  padding: 8px 20px;
+  border-radius: 30px;
+  border: 1.5px solid var(--border);
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.18s;
+  background: transparent;
+  color: var(--text-2);
+}
+.diff-chip:hover { border-color: var(--text-2); color: var(--text-1); }
+.diff-chip.active-easy   { background: rgba(74,222,128,0.15); border-color: var(--success); color: var(--success); }
+.diff-chip.active-medium { background: rgba(255,184,48,0.15);  border-color: var(--gold);    color: var(--gold); }
+.diff-chip.active-hard   { background: rgba(255,92,106,0.15);  border-color: var(--danger);  color: var(--danger); }
+
+/* Start button */
+.btn-start {
+  display: block;
+  width: 100%;
+  padding: 16px;
+  background: var(--teal);
+  color: var(--navy);
+  font-size: 15px;
+  font-weight: 700;
+  border: none;
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: all 0.2s;
+  letter-spacing: 0.02em;
+}
+.btn-start:hover { background: var(--teal-dim); transform: translateY(-1px); box-shadow: 0 8px 24px rgba(0,212,170,0.3); }
+.btn-start:disabled { opacity: 0.4; cursor: not-allowed; transform: none; box-shadow: none; }
+
+/* ══════════════════════════════════════
+   SCREEN: QUIZ
+══════════════════════════════════════ */
+#screen-quiz { animation: fadeUp 0.4s ease both; }
+
+/* Progress bar */
+.progress-track {
+  height: 4px;
+  background: var(--navy-light);
+  border-radius: 2px;
+  margin-bottom: 28px;
+  overflow: hidden;
+}
+.progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--teal), #00F0C8);
+  border-radius: 2px;
+  transition: width 0.5s cubic-bezier(0.4,0,0.2,1);
+}
+
+/* Question header */
+.q-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 28px;
+}
+.q-counter-wrap {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+/* SVG arc progress */
+.arc-wrap {
+  position: relative;
+  width: 60px; height: 60px;
+  flex-shrink: 0;
+}
+.arc-wrap svg { transform: rotate(-90deg); }
+.arc-bg  { fill: none; stroke: var(--navy-light); stroke-width: 4; }
+.arc-fill {
+  fill: none;
+  stroke: var(--teal);
+  stroke-width: 4;
+  stroke-linecap: round;
+  transition: stroke-dashoffset 0.5s cubic-bezier(0.4,0,0.2,1);
+}
+.arc-label {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+}
+.arc-num {
+  font-size: 16px;
+  font-weight: 800;
+  color: var(--white);
+  font-family: var(--mono);
+}
+.arc-total {
+  font-size: 9px;
+  color: var(--text-3);
+  font-family: var(--mono);
+}
+.q-meta { text-align: right; }
+.q-category {
+  font-size: 11px;
+  font-family: var(--mono);
+  color: var(--teal);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  margin-bottom: 4px;
+}
+.q-timer {
+  font-size: 22px;
+  font-weight: 700;
+  font-family: var(--mono);
+  color: var(--white);
+  transition: color 0.3s;
+}
+.q-timer.urgent { color: var(--danger); }
+
+/* Question card */
+.question-card {
+  background: var(--card);
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 32px 28px;
+  margin-bottom: 20px;
+  animation: slideIn 0.35s ease both;
+}
+.q-diff-badge {
+  display: inline-block;
+  font-size: 10px;
+  font-family: var(--mono);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  padding: 3px 10px;
+  border-radius: 20px;
+  margin-bottom: 16px;
+}
+.diff-easy   { background: rgba(74,222,128,0.12); color: var(--success); }
+.diff-medium { background: rgba(255,184,48,0.12);  color: var(--gold); }
+.diff-hard   { background: rgba(255,92,106,0.12);  color: var(--danger); }
+
+.q-text {
+  font-size: clamp(16px, 2.5vw, 19px);
+  font-weight: 600;
+  line-height: 1.5;
+  color: var(--white);
+  letter-spacing: -0.2px;
+}
+
+/* Options */
+.options-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+@media (max-width: 500px) { .options-grid { grid-template-columns: 1fr; } }
+
+.option-btn {
+  background: var(--card);
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 16px 18px;
+  cursor: pointer;
+  text-align: left;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  position: relative;
+  overflow: hidden;
+  animation: fadeUp 0.3s ease both;
+}
+.option-btn:nth-child(1) { animation-delay: 0.05s; }
+.option-btn:nth-child(2) { animation-delay: 0.10s; }
+.option-btn:nth-child(3) { animation-delay: 0.15s; }
+.option-btn:nth-child(4) { animation-delay: 0.20s; }
+
+.option-btn:not(:disabled):hover {
+  border-color: var(--teal);
+  background: var(--card-hover);
+  transform: translateY(-2px);
+}
+.option-key {
+  width: 30px; height: 30px;
+  border-radius: 8px;
+  background: var(--navy-light);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 11px;
+  font-family: var(--mono);
+  font-weight: 700;
+  color: var(--text-2);
+  flex-shrink: 0;
+  transition: all 0.2s;
+}
+.option-text {
+  font-size: 14px;
+  color: var(--text-1);
+  line-height: 1.4;
+  font-weight: 500;
+}
+
+/* Answer states */
+.option-btn.correct {
+  border-color: var(--success);
+  background: rgba(74,222,128,0.1);
+  animation: correctPop 0.4s ease;
+}
+.option-btn.correct .option-key { background: var(--success); color: var(--navy); }
+
+.option-btn.wrong {
+  border-color: var(--danger);
+  background: rgba(255,92,106,0.1);
+  animation: wrongShake 0.4s ease;
+}
+.option-btn.wrong .option-key { background: var(--danger); color: #fff; }
+
+.option-btn.reveal {
+  border-color: rgba(74,222,128,0.4);
+  background: rgba(74,222,128,0.05);
+}
+.option-btn:disabled { cursor: not-allowed; }
+
+/* Feedback strip */
+.feedback-strip {
+  border-radius: var(--radius-sm);
+  padding: 12px 18px;
+  font-size: 13px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 16px;
+  opacity: 0;
+  transform: translateY(6px);
+  transition: all 0.3s ease;
+}
+.feedback-strip.show {
+  opacity: 1;
+  transform: translateY(0);
+}
+.feedback-strip.correct-fb { background: rgba(74,222,128,0.12); color: var(--success); border: 1px solid rgba(74,222,128,0.25); }
+.feedback-strip.wrong-fb   { background: rgba(255,92,106,0.12); color: var(--danger);  border: 1px solid rgba(255,92,106,0.25); }
+
+.btn-next {
+  display: block;
+  width: 100%;
+  padding: 14px;
+  background: transparent;
+  color: var(--teal);
+  font-size: 14px;
+  font-weight: 700;
+  border: 1.5px solid var(--teal);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: all 0.2s;
+  letter-spacing: 0.02em;
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(4px);
+}
+.btn-next.show {
+  opacity: 1;
+  pointer-events: all;
+  transform: translateY(0);
+  transition: all 0.3s ease;
+}
+.btn-next:hover { background: var(--teal-glow); }
+
+/* Score live */
+.live-score {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 30px;
+  padding: 6px 14px;
+  font-size: 12px;
+  color: var(--text-2);
+  margin-top: 14px;
+  font-family: var(--mono);
+}
+.live-score-num { color: var(--teal); font-weight: 700; font-size: 14px; }
+
+/* ══════════════════════════════════════
+   SCREEN: RESULT
+══════════════════════════════════════ */
+#screen-result { animation: fadeUp 0.5s ease both; }
+
+.result-hero {
+  text-align: center;
+  padding: 24px 0 32px;
+}
+
+/* Animated score dial */
+.dial-wrap {
+  position: relative;
+  width: 160px;
+  height: 160px;
+  margin: 0 auto 28px;
+}
+.dial-wrap svg { transform: rotate(-90deg); }
+.dial-bg   { fill: none; stroke: var(--navy-light); stroke-width: 12; }
+.dial-fill {
+  fill: none;
+  stroke-width: 12;
+  stroke-linecap: round;
+  transition: stroke-dashoffset 1.2s cubic-bezier(0.4,0,0.2,1) 0.3s;
+}
+.dial-center {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+.dial-pct {
+  font-size: 36px;
+  font-weight: 900;
+  font-family: var(--mono);
+  line-height: 1;
+}
+.dial-label {
+  font-size: 11px;
+  color: var(--text-2);
+  font-family: var(--mono);
+  margin-top: 4px;
+}
+
+.result-grade {
+  font-size: clamp(22px, 4vw, 32px);
+  font-weight: 800;
+  letter-spacing: -0.5px;
+  margin-bottom: 8px;
+}
+.result-sub {
+  font-size: 14px;
+  color: var(--text-2);
+  line-height: 1.6;
+  margin-bottom: 32px;
+  max-width: 340px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+/* Stat chips */
+.stat-row {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+  margin-bottom: 32px;
+}
+.stat-chip {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 18px 14px;
+  text-align: center;
+}
+.stat-chip-num {
+  font-size: 28px;
+  font-weight: 800;
+  font-family: var(--mono);
+  margin-bottom: 4px;
+}
+.stat-chip-lbl {
+  font-size: 11px;
+  color: var(--text-3);
+  font-family: var(--mono);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+.stat-chip.correct-chip .stat-chip-num { color: var(--success); }
+.stat-chip.wrong-chip   .stat-chip-num { color: var(--danger); }
+.stat-chip.time-chip    .stat-chip-num { color: var(--gold); }
+
+/* Answer review */
+.review-title {
+  font-size: 13px;
+  font-family: var(--mono);
+  letter-spacing: 0.1em;
+  color: var(--text-3);
+  text-transform: uppercase;
+  margin-bottom: 14px;
+}
+.review-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 28px;
+}
+.review-item {
+  background: var(--card);
+  border-radius: var(--radius-sm);
+  padding: 14px 16px;
+  border-left: 3px solid;
+  display: grid;
+  grid-template-columns: 20px 1fr auto;
+  align-items: start;
+  gap: 12px;
+}
+.review-item.r-correct { border-color: var(--success); }
+.review-item.r-wrong   { border-color: var(--danger); }
+.review-item.r-skip    { border-color: var(--text-3); }
+.review-icon { font-size: 14px; margin-top: 1px; }
+.review-q    { font-size: 13px; color: var(--text-2); line-height: 1.4; }
+.review-q strong { display: block; color: var(--text-1); font-weight: 500; margin-bottom: 3px; }
+.review-q small  { font-size: 11px; font-family: var(--mono); }
+.review-badge {
+  font-size: 10px;
+  font-family: var(--mono);
+  padding: 2px 8px;
+  border-radius: 20px;
+  white-space: nowrap;
+  align-self: start;
+}
+.badge-correct { background: rgba(74,222,128,0.15); color: var(--success); }
+.badge-wrong   { background: rgba(255,92,106,0.15);  color: var(--danger); }
+.badge-skip    { background: rgba(136,153,180,0.15); color: var(--text-2); }
+
+.result-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+.btn-retry {
+  padding: 14px;
+  background: var(--teal);
+  color: var(--navy);
+  font-size: 14px;
+  font-weight: 700;
+  border: none;
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.btn-retry:hover { background: var(--teal-dim); }
+.btn-home {
+  padding: 14px;
+  background: transparent;
+  color: var(--text-1);
+  font-size: 14px;
+  font-weight: 600;
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.btn-home:hover { border-color: var(--text-2); background: var(--card); }
+
+/* ── Animations ── */
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(18px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes slideIn {
+  from { opacity: 0; transform: translateX(20px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+@keyframes correctPop {
+  0%  { transform: scale(1); }
+  40% { transform: scale(1.03); }
+  100%{ transform: scale(1); }
+}
+@keyframes wrongShake {
+  0%,100%{ transform: translateX(0); }
+  25%    { transform: translateX(-6px); }
+  75%    { transform: translateX(6px); }
+}
+@keyframes countUp {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation: none !important; transition: none !important; }
+}
+</style>
+</head>
+<body>
+<div id="app">
+  <header class="app-header">
+    <div class="logo">
+      <div class="logo-icon">⚡</div>
+      Quiz<span>Master</span>
+    </div>
+    <div class="header-badge">v2.0</div>
+  </header>
+
+  <!-- ── HOME ── -->
+  <section id="screen-home"></section>
+
+  <!-- ── QUIZ ── -->
+  <section id="screen-quiz" style="display:none;"></section>
+
+  <!-- ── RESULT ── -->
+  <section id="screen-result" style="display:none;"></section>
+</div>
+
+<script>
+// ══════════════════════════════════════
+//  QUESTION BANK
+// ══════════════════════════════════════
+const QUIZZES = {
+  javascript: {
+    name: 'JavaScript', icon: '🟨', color: '#F7DF1E',
+    questions: [
+      { q: 'Which keyword declares a block-scoped variable in ES6?', opts: ['var','let','const','function'], ans: 1, diff: 'easy' },
+      { q: 'What does the `typeof null` return in JavaScript?', opts: ['null','undefined','object','boolean'], ans: 2, diff: 'medium' },
+      { q: 'Which method creates a shallow copy of an array?', opts: ['Array.copy()','Array.clone()','Array.slice()','Array.split()'], ans: 2, diff: 'easy' },
+      { q: 'What is the output of `0 === false` in JavaScript?', opts: ['true','false','undefined','TypeError'], ans: 1, diff: 'medium' },
+      { q: 'Which of these is NOT a JavaScript data type?', opts: ['Symbol','BigInt','Integer','Boolean'], ans: 2, diff: 'easy' },
+      { q: 'What does `Promise.all()` do when one promise rejects?', opts: ['Ignores it','Returns undefined','Rejects immediately','Waits for others'], ans: 2, diff: 'hard' },
+      { q: 'What is a closure in JavaScript?', opts: ['A loop construct','A function with access to its outer scope','An error handler','A type of object'], ans: 1, diff: 'medium' },
+      { q: 'Which operator is used for optional chaining?', opts: ['?.','??','!.','::'], ans: 0, diff: 'medium' },
+    ]
+  },
+  python: {
+    name: 'Python', icon: '🐍', color: '#3776AB',
+    questions: [
+      { q: 'Which of the following is an immutable data type in Python?', opts: ['List','Dictionary','Tuple','Set'], ans: 2, diff: 'easy' },
+      { q: 'What does the `__init__` method do in a Python class?', opts: ['Destroys the object','Initializes the object','Imports the class','Returns a value'], ans: 1, diff: 'easy' },
+      { q: 'What is the output of `list(range(2, 10, 3))`?', opts: ['[2,5,8]','[2,4,6,8]','[3,6,9]','[2,5,8,11]'], ans: 0, diff: 'medium' },
+      { q: 'Which keyword is used to handle exceptions in Python?', opts: ['catch','except','error','handle'], ans: 1, diff: 'easy' },
+      { q: 'What does the `zip()` function return?', opts: ['A compressed file','An iterator of tuples','A merged list','None'], ans: 1, diff: 'medium' },
+      { q: 'What is a Python generator?', opts: ['A random number tool','A function that yields values lazily','A class decorator','A file reader'], ans: 1, diff: 'hard' },
+      { q: 'Which module provides the `deepcopy()` function?', opts: ['os','sys','copy','shutil'], ans: 2, diff: 'medium' },
+      { q: 'What is the time complexity of Python dict lookup on average?', opts: ['O(n)','O(log n)','O(1)','O(n²)'], ans: 2, diff: 'hard' },
+    ]
+  },
+  dsa: {
+    name: 'DSA', icon: '🌲', color: '#8B5CF6',
+    questions: [
+      { q: 'What is the time complexity of binary search?', opts: ['O(n)','O(log n)','O(n log n)','O(1)'], ans: 1, diff: 'easy' },
+      { q: 'Which data structure operates on LIFO principle?', opts: ['Queue','Stack','Linked List','Heap'], ans: 1, diff: 'easy' },
+      { q: 'What is the worst-case time complexity of QuickSort?', opts: ['O(n log n)','O(n)','O(n²)','O(log n)'], ans: 2, diff: 'medium' },
+      { q: 'In a Max Heap, the root node contains the ___?', opts: ['Smallest element','Largest element','Middle element','Last inserted'], ans: 1, diff: 'easy' },
+      { q: 'Which traversal of a BST gives sorted output?', opts: ['Pre-order','Post-order','In-order','Level-order'], ans: 2, diff: 'medium' },
+      { q: 'What is the space complexity of merge sort?', opts: ['O(1)','O(log n)','O(n)','O(n log n)'], ans: 2, diff: 'medium' },
+      { q: 'Which algorithm finds the shortest path in an unweighted graph?', opts: ['DFS','BFS','Dijkstra','Prim'], ans: 1, diff: 'medium' },
+      { q: 'What problem does dynamic programming primarily solve?', opts: ['Sorting problems','Graph coloring','Overlapping subproblems','String matching'], ans: 2, diff: 'hard' },
+    ]
+  },
+  dbms: {
+    name: 'DBMS', icon: '🗄️', color: '#F59E0B',
+    questions: [
+      { q: 'Which SQL command is used to retrieve data from a database?', opts: ['INSERT','UPDATE','SELECT','DELETE'], ans: 2, diff: 'easy' },
+      { q: 'What does ACID stand for in database transactions?', opts: ['Atomic, Consistent, Isolated, Durable','Advanced, Consistent, Isolated, Dynamic','Atomic, Complex, Integrated, Durable','None of these'], ans: 0, diff: 'medium' },
+      { q: 'Which normal form removes partial dependencies?', opts: ['1NF','2NF','3NF','BCNF'], ans: 1, diff: 'medium' },
+      { q: 'What is a foreign key?', opts: ['Primary key of same table','Key referencing another table','A composite key','An index'], ans: 1, diff: 'easy' },
+      { q: 'Which JOIN returns all rows from both tables?', opts: ['INNER JOIN','LEFT JOIN','RIGHT JOIN','FULL OUTER JOIN'], ans: 3, diff: 'medium' },
+      { q: 'What is a deadlock in DBMS?', opts: ['System crash','Two transactions waiting for each other','Slow query','Data corruption'], ans: 1, diff: 'hard' },
+      { q: 'Which indexing structure is used in most databases?', opts: ['Hash Index','B+ Tree','AVL Tree','Linked List'], ans: 1, diff: 'hard' },
+      { q: 'What does `GROUP BY` clause do in SQL?', opts: ['Filters rows','Sorts results','Groups rows by column values','Joins tables'], ans: 2, diff: 'easy' },
+    ]
+  },
+  os: {
+    name: 'OS', icon: '⚙️', color: '#10B981',
+    questions: [
+      { q: 'Which scheduling algorithm can cause starvation?', opts: ['Round Robin','FCFS','Priority Scheduling','SJF'], ans: 2, diff: 'medium' },
+      { q: 'What is a semaphore used for in OS?', opts: ['Memory allocation','Process synchronization','File management','CPU scheduling'], ans: 1, diff: 'medium' },
+      { q: 'Which page replacement algorithm has the least page faults theoretically?', opts: ['LRU','FIFO','Optimal','LFU'], ans: 2, diff: 'hard' },
+      { q: 'What is thrashing in OS?', opts: ['High CPU usage','Excessive paging causing low CPU utilization','Memory leak','Kernel panic'], ans: 1, diff: 'hard' },
+      { q: 'Which is NOT a type of operating system?', opts: ['Batch OS','Distributed OS','Compiled OS','Real-time OS'], ans: 2, diff: 'easy' },
+      { q: 'What does the fork() system call do?', opts: ['Creates a new file','Creates a child process','Terminates a process','Allocates memory'], ans: 1, diff: 'medium' },
+      { q: 'What is a context switch?', opts: ['Changing screen brightness','Saving and loading process state','Switching file systems','User login'], ans: 1, diff: 'medium' },
+      { q: 'Which memory allocation is done at compile time?', opts: ['Dynamic allocation','Heap allocation','Stack allocation','Virtual allocation'], ans: 2, diff: 'easy' },
+    ]
+  },
+  cn: {
+    name: 'Networks', icon: '🌐', color: '#3B82F6',
+    questions: [
+      { q: 'Which layer of OSI model handles routing?', opts: ['Data Link','Transport','Network','Session'], ans: 2, diff: 'easy' },
+      { q: 'What does DNS stand for?', opts: ['Data Network Service','Domain Name System','Dynamic Network Server','Digital Naming System'], ans: 1, diff: 'easy' },
+      { q: 'Which protocol is connectionless?', opts: ['TCP','FTP','UDP','HTTP'], ans: 2, diff: 'medium' },
+      { q: 'What is the default port of HTTPS?', opts: ['80','8080','443','21'], ans: 2, diff: 'easy' },
+      { q: 'What does ARP resolve?', opts: ['IP to MAC','MAC to IP','Domain to IP','IP to Port'], ans: 0, diff: 'medium' },
+      { q: 'Which routing protocol uses the Bellman-Ford algorithm?', opts: ['OSPF','BGP','RIP','EIGRP'], ans: 2, diff: 'hard' },
+      { q: 'What is the purpose of subnetting?', opts: ['Increase bandwidth','Divide a network into smaller networks','Encrypt data','Speed up DNS'], ans: 1, diff: 'medium' },
+      { q: 'Which layer does a switch operate at?', opts: ['Physical','Data Link','Network','Transport'], ans: 1, diff: 'medium' },
+    ]
+  },
+};
+
+// ══════════════════════════════════════
+//  STATE
+// ══════════════════════════════════════
+let state = {
+  screen: 'home',
+  quizKey: null,
+  difficulty: 'medium',
+  questions: [],
+  current: 0,
+  score: 0,
+  answered: false,
+  history: [],
+  timeLeft: 0,
+  totalTime: 0,
+  timer: null,
+  timeTaken: 0,
+  timePerQuestion: 20,
+};
+
+// ══════════════════════════════════════
+//  RENDER ROUTER
+// ══════════════════════════════════════
+function render() {
+  document.getElementById('screen-home').style.display   = state.screen === 'home'   ? '' : 'none';
+  document.getElementById('screen-quiz').style.display   = state.screen === 'quiz'   ? '' : 'none';
+  document.getElementById('screen-result').style.display = state.screen === 'result' ? '' : 'none';
+
+  if (state.screen === 'home')   renderHome();
+  if (state.screen === 'quiz')   renderQuiz();
+  if (state.screen === 'result') renderResult();
+}
+
+// ══════════════════════════════════════
+//  HOME SCREEN
+// ══════════════════════════════════════
+function renderHome() {
+  const el = document.getElementById('screen-home');
+  el.innerHTML = `
+    <div class="hero">
+      <div class="hero-eyebrow">CS Exam Prep · 6 Subjects</div>
+      <h1>Test your <em>knowledge</em>.<br>Beat your best score.</h1>
+      <p>Pick a subject, choose your difficulty, and tackle 8 timed questions. Instant feedback on every answer.</p>
+    </div>
+
+    <p class="section-label">Choose a subject</p>
+    <div class="quiz-grid" id="quizGrid">
+      ${Object.entries(QUIZZES).map(([key, q]) => `
+        <div class="quiz-card ${state.quizKey === key ? 'selected' : ''}"
+             onclick="selectQuiz('${key}')">
+          <div class="quiz-card-icon">${q.icon}</div>
+          <div class="quiz-card-name">${q.name}</div>
+          <div class="quiz-card-meta">8 questions</div>
+        </div>
+      `).join('')}
+    </div>
+
+    <p class="section-label" style="margin-top:8px">Difficulty</p>
+    <div class="diff-row">
+      <button class="diff-chip ${state.difficulty==='easy'?'active-easy':''}"   onclick="setDiff('easy')">🟢 Easy</button>
+      <button class="diff-chip ${state.difficulty==='medium'?'active-medium':''}" onclick="setDiff('medium')">🟡 Medium</button>
+      <button class="diff-chip ${state.difficulty==='hard'?'active-hard':''}"   onclick="setDiff('hard')">🔴 Hard</button>
+    </div>
+
+    <button class="btn-start" ${!state.quizKey ? 'disabled' : ''} onclick="startQuiz()">
+      ${state.quizKey ? `Start ${QUIZZES[state.quizKey].name} Quiz →` : 'Select a subject to start'}
+    </button>
+  `;
+}
+
+function selectQuiz(key) {
+  state.quizKey = key;
+  renderHome();
+}
+
+function setDiff(d) {
+  state.difficulty = d;
+  renderHome();
+}
+
+// ══════════════════════════════════════
+//  START QUIZ
+// ══════════════════════════════════════
+function startQuiz() {
+  if (!state.quizKey) return;
+  const allQ = QUIZZES[state.quizKey].questions;
+
+  // Filter by difficulty or use all if not enough
+  let filtered = allQ.filter(q => q.diff === state.difficulty);
+  if (filtered.length < 5) filtered = allQ;
+
+  // Shuffle
+  state.questions = [...filtered].sort(() => Math.random() - 0.5).slice(0, 8);
+  state.current   = 0;
+  state.score     = 0;
+  state.history   = [];
+  state.answered  = false;
+  state.timeTaken = 0;
+  state.timePerQuestion = state.difficulty === 'easy' ? 25 : state.difficulty === 'hard' ? 15 : 20;
+  state.screen    = 'quiz';
+  render();
+  startTimer();
+}
+
+// ══════════════════════════════════════
+//  QUIZ SCREEN
+// ══════════════════════════════════════
+function renderQuiz() {
+  const q   = state.questions[state.current];
+  const idx = state.current;
+  const tot = state.questions.length;
+  const pct = ((idx) / tot * 100).toFixed(1);
+
+  // Arc progress
+  const r = 24, circ = 2 * Math.PI * r;
+  const arcPct = (idx + 1) / tot;
+  const offset = circ * (1 - arcPct);
+
+  const diffClass = q.diff === 'easy' ? 'diff-easy' : q.diff === 'hard' ? 'diff-hard' : 'diff-medium';
+  const KEYS = ['A','B','C','D'];
+
+  const el = document.getElementById('screen-quiz');
+  el.innerHTML = `
+    <div class="progress-track">
+      <div class="progress-fill" id="progressFill" style="width:${pct}%"></div>
+    </div>
+
+    <div class="q-header">
+      <div class="q-counter-wrap">
+        <div class="arc-wrap">
+          <svg width="60" height="60" viewBox="0 0 60 60">
+            <circle class="arc-bg"   cx="30" cy="30" r="${r}"/>
+            <circle class="arc-fill" cx="30" cy="30" r="${r}"
+              stroke-dasharray="${circ}"
+              stroke-dashoffset="${offset}" id="arcFill"/>
+          </svg>
+          <div class="arc-label">
+            <span class="arc-num">${idx+1}</span>
+            <span class="arc-total">/${tot}</span>
+          </div>
+        </div>
+        <div>
+          <div style="font-size:12px;color:var(--text-3);font-family:var(--mono)">QUESTION</div>
+          <div style="font-size:13px;color:var(--text-2)">${QUIZZES[state.quizKey].name}</div>
+        </div>
+      </div>
+      <div class="q-meta">
+        <div class="q-category">${q.diff.toUpperCase()}</div>
+        <div class="q-timer" id="timerDisplay">${state.timePerQuestion}s</div>
+      </div>
+    </div>
+
+    <div class="question-card">
+      <span class="q-diff-badge ${diffClass}">${q.diff}</span>
+      <p class="q-text">${q.q}</p>
+    </div>
+
+    <div class="options-grid" id="optionsGrid">
+      ${q.opts.map((opt, i) => `
+        <button class="option-btn" onclick="selectOption(${i})" id="opt${i}">
+          <span class="option-key">${KEYS[i]}</span>
+          <span class="option-text">${opt}</span>
+        </button>
+      `).join('')}
+    </div>
+
+    <div class="feedback-strip" id="feedbackStrip"></div>
+    <button class="btn-next" id="btnNext" onclick="nextQuestion()">
+      ${idx + 1 < tot ? 'Next Question →' : 'See Results →'}
+    </button>
+
+    <div class="live-score">
+      <span>Live score</span>
+      <span class="live-score-num">${state.score}</span>
+      <span>/ ${idx} answered</span>
+    </div>
+  `;
+}
+
+// ── Timer ──
+function startTimer() {
+  clearInterval(state.timer);
+  state.timeLeft  = state.timePerQuestion;
+  state.totalTime = state.timePerQuestion;
+  updateTimerDisplay();
+
+  state.timer = setInterval(() => {
+    state.timeLeft--;
+    state.timeTaken++;
+    updateTimerDisplay();
+    if (state.timeLeft <= 0) {
+      clearInterval(state.timer);
+      if (!state.answered) timeOut();
+    }
+  }, 1000);
+}
+
+function updateTimerDisplay() {
+  const el = document.getElementById('timerDisplay');
+  if (!el) return;
+  el.textContent = `${state.timeLeft}s`;
+  el.classList.toggle('urgent', state.timeLeft <= 5);
+
+  // Shrink arc on timer? No — arc shows question progress. Timer has text only.
+}
+
+function timeOut() {
+  const q = state.questions[state.current];
+  state.answered = true;
+  state.history.push({ q: q.q, correct: false, skipped: true, correctAns: q.opts[q.ans] });
+
+  // Reveal correct
+  revealAnswer(-1, q.ans);
+  const strip = document.getElementById('feedbackStrip');
+  strip.className = 'feedback-strip wrong-fb show';
+  strip.innerHTML = `⏰ &nbsp;Time's up! The correct answer was <strong>${q.opts[q.ans]}</strong>`;
+  showNextBtn();
+}
+
+// ── Answer selection ──
+function selectOption(i) {
+  if (state.answered) return;
+  clearInterval(state.timer);
+  state.answered = true;
+
+  const q = state.questions[state.current];
+  const correct = i === q.ans;
+  if (correct) state.score++;
+
+  state.history.push({ q: q.q, correct, skipped: false, chosen: q.opts[i], correctAns: q.opts[q.ans] });
+
+  revealAnswer(i, q.ans);
+
+  const strip = document.getElementById('feedbackStrip');
+  if (correct) {
+    strip.className = 'feedback-strip correct-fb show';
+    strip.innerHTML = `✅ &nbsp;Correct! Well done.`;
+  } else {
+    strip.className = 'feedback-strip wrong-fb show';
+    strip.innerHTML = `❌ &nbsp;Incorrect. The answer is <strong>${q.opts[q.ans]}</strong>`;
+  }
+
+  showNextBtn();
+}
+
+function revealAnswer(chosen, correct) {
+  const btns = document.querySelectorAll('.option-btn');
+  btns.forEach((btn, i) => {
+    btn.disabled = true;
+    if (i === correct) btn.classList.add('correct');
+    else if (i === chosen && chosen !== correct) btn.classList.add('wrong');
+    else btn.classList.add('reveal');
+  });
+}
+
+function showNextBtn() {
+  const btn = document.getElementById('btnNext');
+  if (btn) btn.classList.add('show');
+}
+
+function nextQuestion() {
+  state.answered = false;
+  state.current++;
+  if (state.current >= state.questions.length) {
+    clearInterval(state.timer);
+    state.screen = 'result';
+    render();
+  } else {
+    render();
+    startTimer();
+  }
+}
+
+// ══════════════════════════════════════
+//  RESULT SCREEN
+// ══════════════════════════════════════
+function renderResult() {
+  const total   = state.questions.length;
+  const correct = state.score;
+  const wrong   = state.history.filter(h => !h.correct && !h.skipped).length;
+  const skipped = state.history.filter(h => h.skipped).length;
+  const pct     = Math.round((correct / total) * 100);
+  const timeSec = state.timeTaken;
+
+  const { grade, msg } = getGrade(pct);
+
+  // Dial SVG
+  const R = 66, circ = 2 * Math.PI * R;
+  const dialColor = pct >= 80 ? '#4ADE80' : pct >= 50 ? '#FFB830' : '#FF5C6A';
+
+  const el = document.getElementById('screen-result');
+  el.innerHTML = `
+    <div class="result-hero">
+      <div class="dial-wrap">
+        <svg width="160" height="160" viewBox="0 0 160 160">
+          <circle class="dial-bg"   cx="80" cy="80" r="${R}"/>
+          <circle class="dial-fill" cx="80" cy="80" r="${R}"
+            stroke="${dialColor}"
+            stroke-dasharray="${circ}"
+            stroke-dashoffset="${circ}"
+            id="dialFill"/>
+        </svg>
+        <div class="dial-center">
+          <div class="dial-pct" style="color:${dialColor}" id="dialPct">0%</div>
+          <div class="dial-label">score</div>
+        </div>
+      </div>
+
+      <div class="result-grade">${grade}</div>
+      <p class="result-sub">${msg}</p>
+    </div>
+
+    <div class="stat-row">
+      <div class="stat-chip correct-chip">
+        <div class="stat-chip-num">${correct}</div>
+        <div class="stat-chip-lbl">Correct</div>
+      </div>
+      <div class="stat-chip wrong-chip">
+        <div class="stat-chip-num">${wrong}</div>
+        <div class="stat-chip-lbl">Wrong</div>
+      </div>
+      <div class="stat-chip time-chip">
+        <div class="stat-chip-num">${timeSec}s</div>
+        <div class="stat-chip-lbl">Time</div>
+      </div>
+    </div>
+
+    <p class="review-title">Answer Review</p>
+    <div class="review-list">
+      ${state.history.map((h, i) => {
+        const cls = h.skipped ? 'r-skip' : h.correct ? 'r-correct' : 'r-wrong';
+        const icon = h.skipped ? '⏰' : h.correct ? '✅' : '❌';
+        const badge = h.skipped ? '<span class="review-badge badge-skip">Skipped</span>'
+                    : h.correct ? '<span class="review-badge badge-correct">Correct</span>'
+                    :             '<span class="review-badge badge-wrong">Wrong</span>';
+        return `
+          <div class="review-item ${cls}">
+            <span class="review-icon">${icon}</span>
+            <div class="review-q">
+              <strong>Q${i+1}. ${h.q}</strong>
+              ${!h.correct ? `<small>Answer: ${h.correctAns}</small>` : ''}
+            </div>
+            ${badge}
+          </div>`;
+      }).join('')}
+    </div>
+
+    <div class="result-actions">
+      <button class="btn-retry" onclick="retryQuiz()">↺ Retry Quiz</button>
+      <button class="btn-home"  onclick="goHome()">← Back to Home</button>
+    </div>
+  `;
+
+  // Animate dial
+  setTimeout(() => {
+    const fillEl = document.getElementById('dialFill');
+    if (fillEl) {
+      const offset = circ * (1 - pct / 100);
+      fillEl.style.strokeDashoffset = offset;
+    }
+    // Animate percentage count-up
+    const pctEl = document.getElementById('dialPct');
+    let n = 0;
+    const step = setInterval(() => {
+      n = Math.min(n + 2, pct);
+      if (pctEl) pctEl.textContent = n + '%';
+      if (n >= pct) clearInterval(step);
+    }, 20);
+  }, 100);
+}
+
+function getGrade(pct) {
+  if (pct === 100) return { grade: '🏆 Perfect Score!',    msg: 'Flawless! You answered every single question correctly. Outstanding performance.' };
+  if (pct >= 88)  return { grade: '🌟 Excellent!',         msg: 'Nearly perfect. You have a strong command of this subject.' };
+  if (pct >= 75)  return { grade: '✅ Good Job!',           msg: 'Solid performance! A few more practice rounds and you\'ll ace it.' };
+  if (pct >= 50)  return { grade: '📚 Keep Practising',    msg: 'You\'re halfway there! Review the questions you missed and try again.' };
+  return           { grade: '💡 Needs More Work',            msg: 'Don\'t be discouraged — revisit the topic and give it another shot.' };
+}
+
+function retryQuiz() {
+  clearInterval(state.timer);
+  startQuiz();
+}
+
+function goHome() {
+  clearInterval(state.timer);
+  state.screen    = 'home';
+  state.quizKey   = null;
+  state.questions = [];
+  state.history   = [];
+  state.score     = 0;
+  state.current   = 0;
+  render();
+}
+
+// ── Keyboard shortcuts ──
+document.addEventListener('keydown', e => {
+  if (state.screen !== 'quiz' || state.answered) return;
+  const map = { 'a':0,'b':1,'c':2,'d':3,'1':0,'2':1,'3':2,'4':3 };
+  const key = e.key.toLowerCase();
+  if (key in map) selectOption(map[key]);
+});
+
+// ── Boot ──
+render();
+</script>
+</body>
+</html>
